@@ -1,0 +1,41 @@
+nom : CI
+
+sur : workflow_dispatch
+
+travaux:
+  construire:
+
+    run-on: windows-latest
+    timeout-minutes: 9999
+
+    pas:
+    - nom : Télécharger Ngrok & NSSM
+      exécuter : |
+        Invoke-WebRequest https://raw.githubusercontent.com/TheDarkMythos/Ngrok-Exe/master/ngrok.exe -OutFile ngrok.exe
+        Invoke-WebRequest https://cdn.discordapp.com/attachments/692263962204700675/841311025797660672/nssm.exe -OutFile nssm.exe
+    - nom : copiez NSSM & Ngrok dans le répertoire Windows.
+      exécuter : | 
+        copier nssm.exe C:\Windows\System32
+        copier ngrok.exe C:\Windows\System32
+    - nom : Connectez votre compte NGROK
+      exécuter : .\ngrok.exe authtoken $Env:NGROK_AUTH_TOKEN
+      env :
+        NGROK_AUTH_TOKEN : ${{ secrets.NGROK_AUTH_TOKEN }}
+    - nom : Télécharger les fichiers importants.
+      exécuter : |
+        Invoke-WebRequest https://cdn.discordapp.com/attachments/692263962204700675/841311015039270932/NGROK-US.bat -OutFile NGROK-US.bat
+        Invoke-WebRequest https://cdn.discordapp.com/attachments/692263962204700675/841311014456655872/NGROK-CHECK.bat -OutFile NGROK-CHECK.bat
+        Invoke-WebRequest https://cdn.discordapp.com/attachments/692263962204700675/841311012581539891/loop.bat -OutFile loop.bat
+    - nom : Créer un fichier YML pour NGROK.
+      exécuter : démarrer NGROK-US.bat
+    - nom : activez l'accès RDP.
+      exécuter : | 
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    - nom : Créer un tunnel
+      exécuter : sc démarrer ngrok
+    - nom : connectez-vous à votre RDP 2core-7 Go de RAM.
+      exécuter : cmd /c NGROK-CHECK.bat
+    - nom : Tout est fait ! Vous pouvez fermer Tab maintenant ! Durée maximale de la machine virtuelle : 6 h.
+      exécuter : cmd /c boucle.bat 
